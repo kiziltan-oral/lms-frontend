@@ -73,23 +73,27 @@ export default {
     async handleLogin() {
       try {
         const response = await this.$axios.post('/system-user/login', {
-          email: this.email,
-          password: this.password,
+          e: this.email,
+          p: this.password,
         })
+
+        console.log('Login Response:', response.data)
+
+        if (response.data.r !== 0) {
+          this.$toastr.error(
+            response.data.em || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.',
+            'Hata',
+          )
+          return
+        }
+
         const sessionStore = useSessionStore()
-        sessionStore.startSession(response.data)
+        sessionStore.startSession(response.data.ro)
 
         this.$toastr.success('Başarılı giriş yaptınız!', 'Başarılı')
-        this.$router
-          .push({ name: 'Timings' })
-          .then(() => {
-            console.log('Başarıyla yönlendirildi!')
-          })
-          .catch((error) => {
-            console.error('Yönlendirme hatası:', error)
-          })
+        await this.$router.push({ name: 'Timings' })
       } catch (error) {
-        console.error('Login hatası:', error)
+        console.error('Login Hatası:', error)
         this.$toastr.error('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.', 'Hata')
       }
     },
