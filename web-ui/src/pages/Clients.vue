@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h1>Clients Page</h1>
-    <p>Bu sayfada müşteri listesi görüntülenmektedir.</p>
+    <h1>Müşteriler</h1>
+    <button class="btn btn-primary" @click="showAddClientModal">Müşteri Ekle</button>
 
     <!-- Tablo -->
     <div class="table-responsive mt-4">
@@ -9,21 +9,21 @@
         <thead>
           <tr>
             <th>No</th>
+            <th>Kısa Başlık</th>
             <th>Müşteri Adı</th>
             <th>Notlar</th>
             <th>Durum</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(client, index) in clients" :key="index">
+          <tr v-for="(client, index) in clients" :key="client.id">
             <td>{{ index + 1 + (currentPage - 1) * pageSize }}</td>
-            <td>{{ client.name }}</td>
-            <td>{{ client.notes }}</td>
+            <td>{{ client.st }}</td>
+            <td>{{ client.t }}</td>
+            <td>{{ client.nt }}</td>
             <td>
-              <span
-                :class="['badge', client.status === 'Aktif' ? 'badge-success' : 'badge-danger']"
-              >
-                {{ client.status }}
+              <span :class="['badge', client.ia ? 'badge-success' : 'badge-danger']">
+                {{ client.ia ? 'Aktif' : 'Pasif' }}
               </span>
             </td>
           </tr>
@@ -61,6 +61,61 @@
       </nav>
     </div>
   </div>
+  <!-- Müşteri Ekle Modal -->
+  <div
+    class="modal fade"
+    id="addClientModal"
+    tabindex="-1"
+    aria-labelledby="addClientModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addClientModalLabel">Yeni Müşteri Ekle</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="addClient">
+            <div class="mb-3">
+              <label for="shortTitle" class="form-label">Kısa Başlık</label>
+              <input
+                type="text"
+                id="shortTitle"
+                class="form-control"
+                v-model="newClient.st"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="title" class="form-label">Başlık</label>
+              <input type="text" id="title" class="form-control" v-model="newClient.t" required />
+            </div>
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notlar</label>
+              <textarea id="notes" class="form-control" v-model="newClient.nt"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="isActive" class="form-label">Durum</label>
+              <select id="isActive" class="form-select" v-model="newClient.ia">
+                <option :value="true">Aktif</option>
+                <option :value="false">Pasif</option>
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -68,10 +123,16 @@ export default {
   name: 'Clients',
   data() {
     return {
-      clients: [],
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: 0,
+      clients: [], // Müşteri listesi
+      currentPage: 1, // Mevcut sayfa
+      pageSize: 10, // Sayfa başına kayıt sayısı
+      totalItems: 0, // Toplam müşteri sayısı
+      newClient: {
+        st: '', // ShortTitle (Kısa Başlık)
+        t: '', // Title (Başlık)
+        nt: '', // Notes (Notlar)
+        ia: true, // IsActive (Durum)
+      },
     }
   },
   computed: {
@@ -83,24 +144,76 @@ export default {
     this.fetchClients()
   },
   methods: {
+    // Müşteri listesi çekme
     async fetchClients() {
       try {
-        const response = await this.$axios.post('/clients/all', {
-          pn: this.currentPage, // Sayfa numarası
-          rpp: this.pageSize, // Sayfa başına kayıt
+        const response = await this.$axios.get('/clients/all', {
+          params: {
+            pn: parseInt(this.currentPage, 10),
+            rpp: parseInt(this.pageSize, 10),
+            so: [],
+            flt: '',
+            src: '',
+            srcf: [],
+          },
         })
 
-        // Gelen verileri kaydet
-        this.clients = response.data.clients // Backend `clients` key'ini döndürmeli
-        this.totalItems = response.data.totalItems // Backend toplam kayıt sayısını döndürmeli
+        if (response.data.r !== 0) {
+          console.error('Veri alırken hata:', response.data.em)
+          return
+        }
+
+        const result = response.data.ro
+        this.clients = result.map((client) => ({
+          id: client.id,
+          st: client.st,
+          t: client.t,
+          nt: client.nt,
+          ia: client.ia,
+        }))
+        this.totalItems = this.clients.length
       } catch (error) {
         console.error('Müşteri verileri alınırken hata oluştu:', error)
       }
     },
-    goToPage(page) {
-      if (page < 1 || page > this.totalPages) return
-      this.currentPage = page
-      this.fetchClients()
+
+    // Modal'ı açma
+    showAddClientModal() {
+      const modal = new bootstrap.Modal(document.getElementById('addClientModal'))
+      modal.show()
+    },
+
+    // Yeni müşteri ekleme
+    async addClient() {
+      try {
+        const response = await this.$axios.post('/clients/create', this.newClient)
+
+        if (response.data.r !== 0) {
+          console.error('Müşteri eklenirken hata:', response.data.em)
+          this.$toastr.error('Müşteri eklenemedi.', 'Hata')
+          return
+        }
+
+        this.$toastr.success('Müşteri başarıyla eklendi!', 'Başarılı')
+
+        // Yeni müşteri eklendikten sonra tabloyu güncelle
+        this.fetchClients()
+
+        // Modal'ı kapat
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addClientModal'))
+        modal.hide()
+
+        // Modal içindeki verileri temizle
+        this.newClient = {
+          st: '',
+          t: '',
+          nt: '',
+          ia: true,
+        }
+      } catch (error) {
+        console.error('Müşteri eklenirken hata oluştu:', error)
+        this.$toastr.error('Bir hata oluştu. Lütfen tekrar deneyin.', 'Hata')
+      }
     },
   },
 }

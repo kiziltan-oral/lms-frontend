@@ -88,7 +88,7 @@ export default {
         }
 
         const sessionStore = useSessionStore()
-        sessionStore.startSession(response.data.ro)
+        sessionStore.startSession(response.data.ro.t)
 
         this.$toastr.success('Başarılı giriş yaptınız!', 'Başarılı')
         await this.$router.push({ name: 'Timings' })
