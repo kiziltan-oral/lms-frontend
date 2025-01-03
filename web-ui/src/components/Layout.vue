@@ -72,7 +72,6 @@ export default {
 </script>
 
 <style scoped>
-/* AdminLTE CSS Entegrasyonu */
 .wrapper {
   display: flex;
   height: 100vh;

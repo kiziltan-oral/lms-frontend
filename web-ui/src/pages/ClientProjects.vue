@@ -15,6 +15,9 @@
           </tr>
         </thead>
         <tbody>
+          <tr v-if="projects.length === 0">
+            <td colspan="5" class="text-center">Gösterilecek veri bulunamadı</td>
+          </tr>
           <tr v-for="(project, index) in projects" :key="project.id">
             <td>{{ index + 1 + (currentPage - 1) * pageSize }}</td>
             <td>{{ project.clientName }}</td>
@@ -99,13 +102,6 @@
                 required
               />
             </div>
-            <div class="mb-3">
-              <label for="isActive" class="form-label">Durum</label>
-              <select id="isActive" class="form-select" v-model="newProject.ia">
-                <option :value="true">Aktif</option>
-                <option :value="false">Pasif</option>
-              </select>
-            </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
               <button type="submit" class="btn btn-primary">Kaydet</button>
@@ -165,6 +161,12 @@ export default {
         }
 
         const result = response.data.ro
+        if (!result) {
+          this.projects = []
+          this.totalItems = 0
+          return
+        }
+
         this.projects = result.map((project) => {
           const client = this.clients.find((client) => client.id === project.cid)
           return {

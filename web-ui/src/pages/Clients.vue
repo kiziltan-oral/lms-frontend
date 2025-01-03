@@ -16,6 +16,9 @@
           </tr>
         </thead>
         <tbody>
+          <tr v-if="clients.length === 0">
+            <td colspan="6" class="text-center">Gösterilecek veri bulunamadı</td>
+          </tr>
           <tr v-for="(client, index) in clients" :key="client.id">
             <td>{{ index + 1 + (currentPage - 1) * pageSize }}</td>
             <td>{{ client.st }}</td>
@@ -164,6 +167,12 @@ export default {
         }
 
         const result = response.data.ro
+        if (!result) {
+          this.clients = []
+          this.totalItems = 0
+          return
+        }
+
         this.clients = result.map((client) => ({
           id: client.id,
           st: client.st,

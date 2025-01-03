@@ -7,12 +7,11 @@ import axios from '@/plugins/axios'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/js/bootstrap.bundle'
+import * as bootstrap from 'bootstrap'
+window.bootstrap = bootstrap
 
 import 'admin-lte/dist/css/adminlte.min.css'
 import 'admin-lte/dist/js/adminlte.min.js'
-
-import 'bootstrap'
-import 'admin-lte'
 
 import 'toastr/build/toastr.min.css'
 import toastr from 'toastr'
